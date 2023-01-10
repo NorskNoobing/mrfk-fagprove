@@ -88,6 +88,15 @@ if ((Get-Content $RunDetectionPath) -eq "1") {
     Restart-Computer -Confirm
 }
 
+#Set AD password policy
+$splat = @{
+    "MaxPasswordAge" = "0"
+    "MinPasswordAge" = "0"
+    "Identity" = $DomainName
+    "PasswordHistoryCount" = "1"
+}
+Set-ADDefaultDomainPasswordPolicy @splat
+
 #Install DNS
 Install-WindowsFeature -Name DNS -IncludeManagementTools
 
