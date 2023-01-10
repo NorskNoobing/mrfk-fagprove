@@ -33,11 +33,10 @@ param (
 
     #Misc
     $ScheduledTaskName = "DC config",
-    $FirstRunDetectionPath = "$env:TEMP\InstallationScriptRun.txt"
+    $RunDetectionPath = "$env:TEMP\InstallationScriptRun.txt"
 )
 
-[bool]$FirstRun = !(Test-Path -Path $FirstRunDetectionPath)
-if ($FirstRun) {
+if (!(Test-Path -Path $RunDetectionPath)) {
     #Disable IE Enchanced Security
     #todo: explain Set-ItemProperty, reg paths
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 0
@@ -57,7 +56,7 @@ if ($FirstRun) {
     Rename-Computer -NewName $Hostname
 
     #Create first run detection file
-    New-Item -ItemType File -Path $FirstRunDetectionPath
+    New-Item -ItemType File -Path $RunDetectionPath -Value "1"
 
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-command `". '$("$PSScriptRoot")'`""
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
@@ -68,20 +67,26 @@ if ($FirstRun) {
     return
 }
 
-#Install AD
-Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+if ((Get-Content $RunDetectionPath) -eq "1") {
+    #Install AD
+    Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
-#Configure AD
-$splat = @{
-    "DomainName" = $DomainName
-    "DomainMode" = "7"
-    "DomainNetbiosName" = $DomainNetbiosName
-    "ForestMode" = "7"
-    "InstallDns" = $true
-    "NoRebootOnCompletion" = $true
-    "Force" = $true
+    #Configure AD
+    $splat = @{
+        "DomainName" = $DomainName
+        "DomainMode" = "7"
+        "DomainNetbiosName" = $DomainNetbiosName
+        "ForestMode" = "7"
+        "NoRebootOnCompletion" = $true
+        "Force" = $true
+    }
+    Install-ADDSForest @splat
+
+    #Create first run detection file
+    Out-File -InputObject "2" -FilePath $RunDetectionPath
+
+    Restart-Computer -Confirm
 }
-Install-ADDSForest @splat
 
 #Install DNS
 Install-WindowsFeature -Name DNS -IncludeManagementTools
@@ -137,4 +142,4 @@ pause
 
 #Cleanup
 Unregister-ScheduledTask -TaskName $ScheduledTaskName
-Remove-Item -Path $FirstRunDetectionPath
+Remove-Item -Path $RunDetectionPath

@@ -5,7 +5,7 @@ param (
     [string]$ComputerName = "MSHPV01.intern.mrfylke.no",
     [string]$VmPath = "D:\students\$env:USERNAME",
     [string]$ClientSwitch = "stud-klient-danhol",
-    [string]$Windows10Iso = "D:\isos\eval\22621.525.220925-0207.ni_release_svc_refresh_CLIENTENTERPRISEEVAL_OEMRET_x64FRE_en-us.iso",
+    [string]$Windows10Iso = "D:\isos\SW_DVD9_Win_Pro_10_21H2.5_64BIT_Norwegian_Pro_Ent_EDU_N_MLF_X23-11148.ISO",
     #Set VmName
     [string]$VmName = "$($env:USERNAME)_client01",
     #Set path for the VMs disk
