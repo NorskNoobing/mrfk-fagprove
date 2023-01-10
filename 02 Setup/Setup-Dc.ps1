@@ -94,6 +94,7 @@ $splat = @{
     "MinPasswordAge" = "0"
     "Identity" = $DomainName
     "PasswordHistoryCount" = "1"
+    "ComplexityEnabled" = $false
 }
 Set-ADDefaultDomainPasswordPolicy @splat
 
