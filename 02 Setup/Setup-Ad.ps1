@@ -1,5 +1,5 @@
 param(
-    $AdminsArr = @("Ola Nordmann"),
+    $AdminsArr = @("Domeinar Admsen"),
     $UsersArr = @("Boss Baby","Deez Nutz","Joe Biden"),
 
     $DomainRootPath = "DC=corp,DC=local",
@@ -9,11 +9,12 @@ param(
     $AdminsOuPath = "OU=Admins,$BaseOuPath"
 )
 
-function New-AdAdminUser {
+function New-MrfkAdUser {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)][string]$DisplayName,
-        [int]$StartNum = "1"
+        [Parameter(Mandatory)][ValidateSet("Standard","Admin")][string]$UserType,
+        [Parameter(Mandatory)][string]$Path
     )
 
     process {
@@ -21,50 +22,24 @@ function New-AdAdminUser {
     
         [string]$GivenName = $NameSplit[0..$NameSplit.IndexOf($NameSplit[-2])]
         $Surname = $NameSplit[-1]
-    
-        while (!$ExitLoop) {
-            $Username = ("adm_" + $GivenName.Substring(0,3) + $Surname.Substring(0,3) + ([string]$StartNum).PadLeft(2,"0")).ToLower()
-            try {
-                $UserExists = Get-ADUser $Username
-            }
-            catch {}
 
-            if (!$UserExists) {
-                $ExitLoop = $true
-            } else {
-                $StartNum++
+        #Set username
+        switch ($UserType) {
+            Standard {
+                $UsernameStr = $GivenName.Substring(0,3) + $Surname.Substring(0,3)
+            }
+            Admin {
+                $UsernameStr = "adm_" + $GivenName.Substring(0,3) + $Surname.Substring(0,3)
+                $DisplayName = "$DisplayName (Admin)"
             }
         }
-        
-        $splat = @{
-            "AccountPassword" = Read-Host "Please enter a new password for user `"$Username`"" -AsSecureString
-            "DisplayName" = "$DisplayName (Admin)"
-            "Enabled" = $true
-            "GivenName" = $GivenName
-            "Surname" = $Surname
-            "SamAccountName" = $Username
-            "Name" = $Username
-            "Path" = $AdminsOuPath
-        }
-        New-ADUser @splat
-    }
-}
 
-function New-AdStandardUser {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)][string]$DisplayName,
-        [int]$StartNum = "1"
-    )
+        $UsernameStr = $UsernameStr.ToLower()
+        $StartNum = "1"
 
-    process {
-        $NameSplit = ($DisplayName -split " ")
-    
-        [string]$GivenName = $NameSplit[0..$NameSplit.IndexOf($NameSplit[-2])]
-        $Surname = $NameSplit[-1]
-    
+        #Auto inrement username if it's already taken
         while (!$ExitLoop) {
-            $Username = ($GivenName.Substring(0,3) + $Surname.Substring(0,3) + ([string]$StartNum).PadLeft(2,"0")).ToLower()
+            $Username = $UsernameStr + $StartNum.PadLeft(2,"0")
             try {
                 $UserExists = Get-ADUser $Username
             }
@@ -85,7 +60,7 @@ function New-AdStandardUser {
             "Surname" = $Surname
             "SamAccountName" = $Username
             "Name" = $Username
-            "Path" = $UsersOuPath
+            "Path" = $Path
         }
         New-ADUser @splat
     }
@@ -99,11 +74,11 @@ New-ADOrganizationalUnit -Name "Groups" -Path $BaseOuPath
 
 #Create all users
 $AdminsArr.ForEach({
-    New-AdAdminUser -DisplayName $_
+    New-MrfkAdUser -DisplayName $_ -UserType "Admin" -Path $AdminsOuPath
 })
 
 $UsersArr.ForEach({
-    New-AdStandardUser -DisplayName $_
+    New-MrfkAdUser -DisplayName $_ -UserType "Standard" -Path $UsersOuPath
 })
 
 #Create AD-groups
