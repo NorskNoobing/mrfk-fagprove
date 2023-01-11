@@ -98,6 +98,13 @@ $splat = @{
 }
 Set-ADDefaultDomainPasswordPolicy @splat
 
+#Set up AD config
+$RepoRoot = (Get-Item $PSScriptRoot).parent.fullname
+Import-Module "$RepoRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
+[xml]$xml = Get-Content -Raw "$PSScriptRoot\AD-structure.xml"
+$DomainRoot = (Get-ADDomain).DistinguishedName
+New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | ConvertFrom-SecureString)
+
 #Install DNS
 Install-WindowsFeature -Name DNS -IncludeManagementTools
 
