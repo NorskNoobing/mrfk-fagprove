@@ -16,8 +16,8 @@ New-ADOrganizationalUnit -Name "Users" -Path $BaseOuPath
 New-ADOrganizationalUnit -Name "Groups" -Path $BaseOuPath
 
 #Import module with function to create users
-$ModuleRoot = (Get-Item $PSScriptRoot).parent.fullname
-Import-Module "$ModuleRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
+$RepoRoot = (Get-Item $PSScriptRoot).parent.fullname
+Import-Module "$RepoRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
 
 #Create all users
 $AdminsArr.ForEach({
