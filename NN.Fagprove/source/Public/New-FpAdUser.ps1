@@ -50,6 +50,7 @@ function New-FpAdUser {
             "SamAccountName" = $Username
             "Name" = $Username
             "Path" = $Path
+            "PassThru" = $true
         }
         New-ADUser @splat
     }
