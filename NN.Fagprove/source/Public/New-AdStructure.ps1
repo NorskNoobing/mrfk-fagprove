@@ -1,43 +1,42 @@
 function New-AdStructure {
     param (
-        [Parameter(Mandatory)][xml]$Node,
+        [Parameter(Mandatory)]$Node,
         [Parameter(Mandatory)][string]$Path,
-        [string]$AdminsOuPath = "",
-        [string]$UsersOuPath = ""
+        [string]$UserTempPassword
     )
 
-    $Node.ForEach({
+    foreach ($item in $Node) {
         $result = $null
 
-        switch ($_.type) {
+        switch ($item.type) {
             ou {
-                $result = New-ADOrganizationalUnit -Path $Path -Name $_.name -PassThru
+                $result = New-ADOrganizationalUnit -Path $Path -Name $item.name -PassThru
     
-                if ($_.object) {
-                    New-AdStructure -Node $_.object -Path $result.DistinguishedName
+                if ($item.object) {
+                    New-AdStructure -Node $item.object -Path $result.DistinguishedName -UserTempPassword $UserTempPassword
                 }
             }
             user {
-                switch ($_.usertype) {
+                switch ($item.usertype) {
                     Admin {
-                        $result = New-FpAdUser -DisplayName $_.name -UserType "Admin" -Path $AdminsOuPath
+                        $result = New-FpAdUser -DisplayName $item.name -UserType "Admin" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
                     }
                     Standard {
-                        $result = New-FpAdUser -DisplayName $_.name -UserType "Standard" -Path $UsersOuPath
+                        $result = New-FpAdUser -DisplayName $item.name -UserType "Standard" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
                     }
                 }
             }
             group {
-                $result = New-ADGroup -Path $Path -Name $_.name -PassThru
+                $result = New-ADGroup -Path $Path -Name $item.name -PassThru -GroupScope Global
             }
         }
 
-        if ($_.MemberOf) {
-            $_.MemberOf.ForEach({
+        if ($item.MemberOf) {
+            foreach ($group in $item.MemberOf) {
                 $AdGroup = $null
-                $AdGroup = Get-ADGroup $_.name
+                $AdGroup = Get-ADGroup $group.name
                 Add-ADGroupMember -Members $result.DistinguishedName -Identity $AdGroup.DistinguishedName
-            })
+            }
         }
-    })
+    }
 }
