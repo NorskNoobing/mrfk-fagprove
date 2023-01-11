@@ -3,7 +3,8 @@ function New-FpAdUser {
     param (
         [Parameter(Mandatory)][string]$DisplayName,
         [Parameter(Mandatory)][ValidateSet("Standard","Admin")][string]$UserType,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)][string]$Path,
+        [securestring]$Password
     )
 
     process {
@@ -40,9 +41,13 @@ function New-FpAdUser {
                 $StartNum++
             }
         }
+
+        if (!$Password) {
+            $Password = Read-Host "Please enter a new password for user `"$Username`"" -AsSecureString
+        }
         
         $splat = @{
-            "AccountPassword" = Read-Host "Please enter a new password for user `"$Username`"" -AsSecureString
+            "AccountPassword" = $Password
             "DisplayName" = $DisplayName
             "Enabled" = $true
             "GivenName" = $GivenName
