@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<object type="ou" name="CORP">
+    <object type="ou" name="Groups">
+        <object type="group" name="Employees"/>
+        <object type="group" name="Sales">
+            <MemberOf name="Employees"/>
+        </object>
+        <object type="group" name="Production">
+            <MemberOf name="Employees"/>
+        </object>
+        <object type="group" name="Management">
+            <MemberOf name="Employees"/>
+        </object>
+    </object>
+    <object type="ou" name="Admins">
+        <object type="User" usertype="Admin" name="Domeinar Admsen">
+            <MemberOf name="Domain Admins"/>
+        </object>
+    </object>
+    <object type="ou" name="Users">
+        <object type="User" usertype="Standard" name="Joe Biden">
+            <MemberOf name="Sales"/>
+        </object>
+        <object type="User" usertype="Standard" name="Boss Baby">
+            <MemberOf name="Management"/>
+        </object>
+        <object type="User" usertype="Standard" name="Deez Nutz">
+            <MemberOf name="Production"/>
+        </object>
+    </object>
+</object>
