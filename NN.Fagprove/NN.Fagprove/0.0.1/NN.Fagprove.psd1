@@ -18,7 +18,7 @@ ModuleVersion = '0.0.1'
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = 'fa14ef6b-d922-4a05-819f-3bf5fd04e0ff'
+GUID = 'ea50937a-7f7b-4b65-936e-176e73be8497'
 
 # Author of this module
 Author = 'NorskNoobing'
@@ -69,7 +69,7 @@ PowerShellVersion = '5.2'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'New-FpAdUser'
+FunctionsToExport = @('New-AdStructure','New-FpAdUser')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
