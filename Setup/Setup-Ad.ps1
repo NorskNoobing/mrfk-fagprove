@@ -2,7 +2,7 @@ param(
     $AdminsArr = @("Domeinar Admsen"),
     $UsersArr = @("Boss Baby","Deez Nutz","Joe Biden"),
 
-    $DomainRootPath = "DC=corp,DC=local",
+    $DomainRootPath = (Get-ADDomain).DistinguishedName,
     $BaseOuPath = "OU=CORP,$DomainRootPath",
     $GroupOuPath = "OU=Groups,$BaseOuPath",
     $UsersOuPath = "OU=Users,$BaseOuPath",
@@ -43,7 +43,7 @@ Add-ADGroupMember -Identity "CN=Ansatte,$GroupOuPath" -Members @(
 
 #Add domain admins to group
 Add-ADGroupMember -Identity "CN=Domain Admins,CN=Users,$DomainRootPath" -Members @(
-    "CN=adm_olanor01,$AdminsOuPath"
+    "CN=adm_domadm01,$AdminsOuPath"
 )
 
 #Add users to Ledelse group
