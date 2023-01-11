@@ -18,7 +18,7 @@ ModuleVersion = '0.0.1'
 # CompatiblePSEditions = @()
 
 # ID used to uniquely identify this module
-GUID = 'bcee2852-e8f9-4acb-b346-0a159b765f7f'
+GUID = '5c3e6364-0960-48b5-922f-55dc13aeaebf'
 
 # Author of this module
 Author = 'NorskNoobing'
@@ -95,7 +95,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = 'MRFK', 'Mrfylke', 'Møre og Romsdal Fylkeskommune', 'Fagprove'
+        Tags = 'MRFK', 'Mrfylke', 'Fagprove'
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/NorskNoobing/NN.Fagprove/blob/main/LICENSE.md'

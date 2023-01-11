@@ -1,7 +1,7 @@
 param (
     #Manual params
     [string]$description = "Functions for fagprove",
-    [array]$tags = @("MRFK","Mrfylke","Møre og Romsdal Fylkeskommune","Fagprove"),
+    [array]$tags = @("MRFK","Mrfylke","Fagprove"),
     [version]$PsVersion = "5.2",
     [string]$Author = "NorskNoobing",
 
