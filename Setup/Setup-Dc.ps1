@@ -33,10 +33,16 @@ param (
 
     #Misc
     $ScheduledTaskName = "DC config",
-    $RunDetectionPath = "$env:TEMP\InstallationScriptRun.txt"
+    $PathsPrefix = "$env:PUBLIC\Documents",
+    $RunDetectionPath = "$PathsPrefix\InstallationScriptRun.txt",
+    $AdDsSafeModePwdPath = "$PathsPrefix\AdDsSafeModePwd.xml",
+    $AdUserTempPwdPath = "$PathsPrefix\AdUserTempPwd.xml"
 )
 
 if (!(Test-Path -Path $RunDetectionPath)) {
+    Read-Host "Enter ADDS safe-mode password" -AsSecureString | ConvertFrom-SecureString | Export-Clixml $AdDsSafeModePwdPath
+    Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | ConvertFrom-SecureString | Export-Clixml $AdUserTempPwdPath
+
     #Disable IE Enchanced Security
     #todo: explain Set-ItemProperty, reg paths
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 0
@@ -58,12 +64,12 @@ if (!(Test-Path -Path $RunDetectionPath)) {
     #Create first run detection file
     New-Item -ItemType File -Path $RunDetectionPath -Value "1"
 
-    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-command `". '$("$PSScriptRoot")'`""
+    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-command `". '$($MyInvocation.MyCommand.Path)'`""
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
     Register-ScheduledTask -TaskName $ScheduledTaskName -Trigger $Trigger -Action $Action
 
     #Restart Computer
-    Restart-Computer -Confirm:$true
+    Restart-Computer
     return
 }
 
@@ -79,13 +85,15 @@ if ((Get-Content $RunDetectionPath) -eq "1") {
         "ForestMode" = "7"
         "NoRebootOnCompletion" = $true
         "Force" = $true
+        "SafeModeAdministratorPassword" = Import-Clixml $AdDsSafeModePwdPath | ConvertTo-SecureString
     }
     Install-ADDSForest @splat
 
     #Create first run detection file
     Out-File -InputObject "2" -FilePath $RunDetectionPath
 
-    Restart-Computer -Confirm
+    Restart-Computer
+    return
 }
 
 #Set AD password policy
@@ -103,7 +111,7 @@ $RepoRoot = (Get-Item $PSScriptRoot).parent.fullname
 Import-Module "$RepoRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
 [xml]$xml = Get-Content -Raw "$PSScriptRoot\AD-structure.xml"
 $DomainRoot = (Get-ADDomain).DistinguishedName
-New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | ConvertFrom-SecureString)
+New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Import-Clixml $AdUserTempPwdPath)
 
 #Install DNS
 Install-WindowsFeature -Name DNS -IncludeManagementTools
@@ -127,7 +135,7 @@ $splat = @{
 }
 Add-DhcpServerv4Scope @splat
 #Set exclusion range
-$ServerScopeId = (Get-DhcpServerv4Scope).where({$_.Name -eq "Server"}).ScopeId
+$ServerScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Server"}).ScopeId
 Add-Dhcpserverv4ExclusionRange -ScopeId $ServerScopeId -StartRange $ServerExclusionStartRange -EndRange $ServerExclusionEndRange
 
 #Add DHCP scope for client network
@@ -139,7 +147,7 @@ $splat = @{
 }
 Add-DhcpServerv4Scope @splat
 #Set exclusion range
-$ClientScopeId = (Get-DhcpServerv4Scope).where({$_.Name -eq "Client"}).ScopeId
+$ClientScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Client"}).ScopeId
 Add-Dhcpserverv4ExclusionRange -ScopeId $ClientScopeId -StartRange $ClientExclusionStartRange -EndRange $ClientExclusionEndRange
 
 #Add DHCP scope for print network
@@ -151,12 +159,14 @@ $splat = @{
 }
 Add-DhcpServerv4Scope @splat
 #Set exclusion range
-$PrintScopeId = (Get-DhcpServerv4Scope).where({$_.Name -eq "Print"}).ScopeId
+$PrintScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Print"}).ScopeId
 Add-Dhcpserverv4ExclusionRange -ScopeId $PrintScopeId -StartRange $PrintExclusionStartRange -EndRange $PrintExclusionEndRange
+
+#Cleanup
+Unregister-ScheduledTask -TaskName $ScheduledTaskName -Confirm:$false
+Remove-Item -Path $RunDetectionPath
+Remove-Item -Path $AdDsSafeModePwdPath
+Remove-Item -Path $AdUserTempPwdPath
 
 #Allow user to read outputs before exiting
 pause
-
-#Cleanup
-Unregister-ScheduledTask -TaskName $ScheduledTaskName
-Remove-Item -Path $RunDetectionPath
