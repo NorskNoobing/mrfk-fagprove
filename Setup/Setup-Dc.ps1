@@ -17,7 +17,7 @@ param (
     $ServerEndRange = "10.0.10.254",
     $ServerSubnetMask = "255.255.255.0",
     $ServerExclusionStartRange = "10.0.10.1",
-    $ServerExclusionEndRange = "10.0.10.10",
+    $ServerExclusionEndRange = "10.0.10.20",
 
     $ClientStartRange = "10.0.20.1",
     $ClientEndRange = "10.0.21.254",
@@ -44,11 +44,9 @@ if (!(Test-Path -Path $RunDetectionPath)) {
     Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | ConvertFrom-SecureString | Export-Clixml $AdUserTempPwdPath
 
     #Disable IE Enchanced Security
-    #todo: explain Set-ItemProperty, reg paths
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 0
 
     #Disable IPv6 on the first network adapter with the name "*eth*"
-    #todo: explain where, where syntax, $_, |, [0], Get-NetAdapterBinding, and Disable-NetAdapterBinding
     (Get-NetAdapterBinding).Where({($_.ComponentID -eq 'ms_tcpip6') -and ($_.Name -like "*eth*")})[0] | Disable-NetAdapterBinding
 
     #Get the index of the first network adapter with the name "*eth*"
