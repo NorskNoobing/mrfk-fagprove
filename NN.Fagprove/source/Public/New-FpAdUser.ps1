@@ -14,14 +14,10 @@ function New-FpAdUser {
         $Surname = $NameSplit[-1]
 
         #Set username
-        switch ($UserType) {
-            Standard {
-                $UsernameStr = $GivenName.Substring(0,3) + $Surname.Substring(0,3)
-            }
-            Admin {
-                $UsernameStr = "adm_" + $GivenName.Substring(0,3) + $Surname.Substring(0,3)
-                $DisplayName = "$DisplayName (Admin)"
-            }
+        $UsernameStr = $GivenName.Substring(0,3) + $Surname.Substring(0,3)
+        if ($UserType -eq "Admin") {
+            $UsernameStr = "adm_" + $UsernameStr
+            $DisplayName = "$DisplayName (Admin)"
         }
 
         $UsernameStr = $UsernameStr.ToLower()

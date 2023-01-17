@@ -10,26 +10,38 @@ param (
     $DomainName = "corp.local",
     $DomainNetbiosName = "corp",
 
+    #DNS
+    $DNSForwarders = @("1.1.1.1","8.8.8.8"),
+
     #DHCP
     $DnsServer = $IP,
 
-    $ServerStartRange = "10.0.10.1",
-    $ServerEndRange = "10.0.10.254",
-    $ServerSubnetMask = "255.255.255.0",
-    $ServerExclusionStartRange = "10.0.10.1",
-    $ServerExclusionEndRange = "10.0.10.20",
-
-    $ClientStartRange = "10.0.20.1",
-    $ClientEndRange = "10.0.21.254",
-    $ClientSubnetMask = "255.255.254.0",
-    $ClientExclusionStartRange = "10.0.20.1",
-    $ClientExclusionEndRange = "10.0.20.25",
-
-    $PrintStartRange = "10.0.30.1",
-    $PrintEndRange = "10.0.30.254",
-    $PrintSubnetMask = "255.255.255.0",
-    $PrintExclusionStartRange = "10.0.30.1",
-    $PrintExclusionEndRange = "10.0.30.10",
+    $DhcpScopeArr = @(
+        @{
+            "ScopeName" = "Server"
+            "StartRange" = "10.0.10.1"
+            "EndRange" = "10.0.10.254"
+            "SubnetMask" = "255.255.255.0"
+            "ExclusionStartRange" = "10.0.10.1"
+            "ExclusionEndRange" = "10.0.10.20"
+        },
+        @{
+            "ScopeName" = "Client"
+            "StartRange" = "10.0.20.1"
+            "EndRange" = "10.0.21.254"
+            "SubnetMask" = "255.255.254.0"
+            "ExclusionStartRange" = "10.0.20.1"
+            "ExclusionEndRange" = "10.0.20.25"
+        },
+        @{
+            "ScopeName" = "Print"
+            "StartRange" = "10.0.30.1"
+            "EndRange" = "10.0.30.254"
+            "SubnetMask" = "255.255.255.0"
+            "ExclusionStartRange" = "10.0.30.1"
+            "ExclusionEndRange" = "10.0.30.10"
+        }
+    ),
 
     #Misc
     $ScheduledTaskName = "DC config",
@@ -115,8 +127,9 @@ New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Import-Cl
 Install-WindowsFeature -Name DNS -IncludeManagementTools
 
 #Add DNS forwarders
-Add-DnsServerForwarder -IPAddress "1.1.1.1"
-Add-DnsServerForwarder -IPAddress "8.8.8.8"
+$DNSForwarders.ForEach({
+    Add-DnsServerForwarder -IPAddress $_
+})
 
 #Install DHCP
 Install-WindowsFeature -Name DHCP -IncludeManagementTools
@@ -124,47 +137,31 @@ Install-WindowsFeature -Name DHCP -IncludeManagementTools
 #Set DHCP server settings
 Set-DhcpServerv4OptionValue -DnsServer $DnsServer -DnsDomain $DomainName
 
-#Add DHCP scope for server network
-$splat = @{
-    "Name" = "Server"
-    "StartRange" = $ServerStartRange
-    "EndRange" = $ServerEndRange
-    "SubnetMask" = $ServerSubnetMask
-}
-Add-DhcpServerv4Scope @splat
-#Set exclusion range
-$ServerScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Server"}).ScopeId
-Add-Dhcpserverv4ExclusionRange -ScopeId $ServerScopeId -StartRange $ServerExclusionStartRange -EndRange $ServerExclusionEndRange
+#Add all DHCP scopes
+$DhcpScopeArr.ForEach({
+    $splat = @{
+        "Name" = $_.ScopeName
+        "StartRange" = $_.StartRange
+        "EndRange" = $_.EndRange
+        "SubnetMask" = $_.SubnetMask
+        "PassThru" = $true
+    }
+    $result = Add-DhcpServerv4Scope @splat
 
-#Add DHCP scope for client network
-$splat = @{
-    "Name" = "Client"
-    "StartRange" = $ClientStartRange
-    "EndRange" = $ClientEndRange
-    "SubnetMask" = $ClientSubnetMask
-}
-Add-DhcpServerv4Scope @splat
-#Set exclusion range
-$ClientScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Client"}).ScopeId
-Add-Dhcpserverv4ExclusionRange -ScopeId $ClientScopeId -StartRange $ClientExclusionStartRange -EndRange $ClientExclusionEndRange
-
-#Add DHCP scope for print network
-$splat = @{
-    "Name" = "Print"
-    "StartRange" = $PrintStartRange
-    "EndRange" = $PrintEndRange
-    "SubnetMask" = $PrintSubnetMask
-}
-Add-DhcpServerv4Scope @splat
-#Set exclusion range
-$PrintScopeId = (Get-DhcpServerv4Scope | Where-Object {$_.Name -eq "Print"}).ScopeId
-Add-Dhcpserverv4ExclusionRange -ScopeId $PrintScopeId -StartRange $PrintExclusionStartRange -EndRange $PrintExclusionEndRange
+    $splat = @{
+        "ScopeId" = $result.ScopeId
+        "StartRange" = $_.ExclusionStartRange
+        "EndRange" = $_.ExclusionEndRange
+    }
+    Add-Dhcpserverv4ExclusionRange @splat
+})
 
 #Cleanup
 Unregister-ScheduledTask -TaskName $ScheduledTaskName -Confirm:$false
-Remove-Item -Path $RunDetectionPath
-Remove-Item -Path $AdDsSafeModePwdPath
-Remove-Item -Path $AdUserTempPwdPath
+$FilepathArr = @($RunDetectionPath,$AdDsSafeModePwdPath,$AdUserTempPwdPath)
+$FilePathArr.ForEach({
+    Remove-Item -Path $_
+})
 
 #Allow user to read outputs before exiting
 pause

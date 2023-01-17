@@ -17,14 +17,7 @@ function New-AdStructure {
                 }
             }
             user {
-                switch ($item.usertype) {
-                    Admin {
-                        $result = New-FpAdUser -DisplayName $item.name -UserType "Admin" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
-                    }
-                    Standard {
-                        $result = New-FpAdUser -DisplayName $item.name -UserType "Standard" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
-                    }
-                }
+                $result = New-FpAdUser -DisplayName $item.name -UserType $item.usertype -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
             }
             group {
                 $result = New-ADGroup -Path $Path -Name $item.name -PassThru -GroupScope Global
