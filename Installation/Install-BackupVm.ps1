@@ -1,13 +1,13 @@
 <#
-    Set up client VM
+    Set up DC VM
 #>
 param (
     [string]$ComputerName = "MSHPV01.intern.mrfylke.no",
     [string]$VmPath = "D:\students\$env:USERNAME",
-    [string]$ClientSwitch = "stud-klient-danhol",
-    [string]$Windows10Iso = "D:\isos\SW_DVD9_Win_Pro_10_21H2.5_64BIT_Norwegian_Pro_Ent_EDU_N_MLF_X23-11148.ISO",
+    [string]$ServerSwitch = "stud-server-danhol",
+    [string]$WindowsServerIso = "D:\isos\eval\17763.737.190906-2324.rs5_release_svc_refresh_server_eval_x64fre_en-us_1 (1).iso",
     #Set VmName
-    [string]$VmName = "$($env:USERNAME)_PengebingenAs-client01",
+    [string]$VmName = "$($env:USERNAME)_PengebingenAs-backup01",
     #Set path for the VMs disk
     [string]$VhdPath = "$VmPath\disk\$VmName.vhdx"
 )
@@ -23,7 +23,7 @@ $splat = @{
     #Allocated RAM size
     "MemoryStartupBytes" = "4GB"
     #Name of the default virtual switch
-    "SwitchName" = $ClientSwitch
+    "SwitchName" = $ServerSwitch
     #Local path to where the VHD should be saved on the Hyper-V host
     "NewVHDPath" = $VhdPath
     #Size of the VHD in GB
@@ -41,7 +41,7 @@ $splat = @{
     #Name of the VM
     "VMName" = $VmName
     #Local path to the ISO file
-    "Path" = $Windows10Iso
+    "Path" = $WindowsServerIso
 }
 #Run function that adds ISO file to your VM
 Add-VMDVDDrive @splat

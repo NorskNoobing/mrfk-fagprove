@@ -10,7 +10,7 @@ param (
     [string]$PrintSwitch = "stud-print-danhol",
     [string]$PfsenseIso = "D:\isos\pfSense-CE-2.6.0-RELEASE-amd64.iso",
     #Set VmName
-    [string]$VmName = "$($env:USERNAME)_fw01",
+    [string]$VmName = "$($env:USERNAME)_PengebingenAs-fw01",
     #Set path for the VMs disk
     [string]$VhdPath = "$VmPath\disk\$VmName.vhdx"
 )

@@ -7,7 +7,7 @@ param (
     [string]$ServerSwitch = "stud-server-danhol",
     [string]$WindowsServerIso = "D:\isos\eval\17763.737.190906-2324.rs5_release_svc_refresh_server_eval_x64fre_en-us_1 (1).iso",
     #Set VmName
-    [string]$VmName = "$($env:USERNAME)_dc01",
+    [string]$VmName = "$($env:USERNAME)_PengebingenAs-dc01",
     #Set path for the VMs disk
     [string]$VhdPath = "$VmPath\disk\$VmName.vhdx"
 )
