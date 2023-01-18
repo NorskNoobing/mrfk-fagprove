@@ -27,7 +27,12 @@ add-type @"
     }
 "@
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Ssl3, [Net.SecurityProtocolType]::Tls, [Net.SecurityProtocolType]::Tls11, [Net.SecurityProtocolType]::Tls12
+[Net.ServicePointManager]::SecurityProtocol = @(
+    [Net.SecurityProtocolType]::Ssl3,
+    [Net.SecurityProtocolType]::Tls,
+    [Net.SecurityProtocolType]::Tls11,
+    [Net.SecurityProtocolType]::Tls12
+)
 
 #Change pfSense hostname
 Update-PfHostname -domain ((Get-ADDomain).forest) -hostname $hostname
