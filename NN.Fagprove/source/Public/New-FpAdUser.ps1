@@ -52,6 +52,7 @@ function New-FpAdUser {
             "Name" = $Username
             "Path" = $Path
             "PassThru" = $true
+            "UserPrincipalName" = "$($NameSplit -join ".")@pengebingen.net"
         }
         New-ADUser @splat
     }
