@@ -6,9 +6,10 @@ param (
     $DNS = "127.0.0.1",
     $Hostname = "SR-WINSRV19-001",
 
-    #AD domain
+    #AD
     $DomainName = "corp.local",
     $DomainNetbiosName = "corp",
+    $OUPath = "OU=Servers,OU=Computers,OU=CORP,DC=corp,DC=local",
 
     #DNS
     $DNSForwarders = @("1.1.1.1","8.8.8.8"),
@@ -123,6 +124,9 @@ Import-Module "$RepoRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
 $DomainRoot = (Get-ADDomain).DistinguishedName
 New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Import-Clixml $AdUserTempPwdPath)
 
+#Move DC into the right OU
+Move-ADObject -Identity (Get-ADComputer $Hostname).DistinguishedName -TargetPath $OUPath
+
 #Install DNS
 Install-WindowsFeature -Name DNS -IncludeManagementTools
 
@@ -154,7 +158,16 @@ $DhcpScopeArr.ForEach({
         "EndRange" = $_.ExclusionEndRange
     }
     Add-Dhcpserverv4ExclusionRange @splat
+
+    $splat = @{
+        "ScopeId" = $result.ScopeId
+        "Router" = $_.StartRange
+    }
+    Set-DhcpServerv4OptionValue @splat
 })
+
+#Authorize DHCP server in domain
+Add-DhcpServerInDC -DnsName $Hostname -IPAddress $IP
 
 #Cleanup
 Unregister-ScheduledTask -TaskName $ScheduledTaskName -Confirm:$false
