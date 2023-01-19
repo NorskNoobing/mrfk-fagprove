@@ -53,19 +53,27 @@ param (
 )
 
 if (!(Test-Path -Path $RunDetectionPath)) {
-    Read-Host "Enter ADDS safe-mode password" -AsSecureString | ConvertFrom-SecureString | Export-Clixml $AdDsSafeModePwdPath
-    Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | ConvertFrom-SecureString | Export-Clixml $AdUserTempPwdPath
+    Read-Host "Enter ADDS safe-mode password" -AsSecureString | ConvertFrom-SecureString | 
+    Export-Clixml $AdDsSafeModePwdPath
+    Read-Host "Please enter a temp-password for the AD-Users" -AsSecureString | 
+    ConvertFrom-SecureString | Export-Clixml $AdUserTempPwdPath
 
     #Disable IE Enchanced Security
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -Name "IsInstalled" -Value 0
+    Set-ItemProperty -Path @"
+HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}
+"@ -Name "IsInstalled" -Value 0
 
     #Disable IPv6 on the first network adapter with the name "*eth*"
-    (Get-NetAdapterBinding).Where({($_.ComponentID -eq 'ms_tcpip6') -and ($_.Name -like "*eth*")})[0] | Disable-NetAdapterBinding
+    (Get-NetAdapterBinding).Where({
+        ($_.ComponentID -eq 'ms_tcpip6') -and ($_.Name -like "*eth*")
+    })[0] | Disable-NetAdapterBinding
 
     #Get the index of the first network adapter with the name "*eth*"
-    $NetworkInterfaceIndex = (Get-NetAdapter | Where-Object {$_.Name -like "*eth*"})[0].InterfaceIndex
+    $NetworkInterfaceIndex = (Get-NetAdapter | 
+    Where-Object {$_.Name -like "*eth*"})[0].InterfaceIndex
     #Set static IP
-    New-NetIPAddress -IPAddress $IP -DefaultGateway $DefaultGateway -PrefixLength $SubnetMask -InterfaceIndex $NetworkInterfaceIndex
+    New-NetIPAddress -IPAddress $IP -DefaultGateway $DefaultGateway `
+    -PrefixLength $SubnetMask -InterfaceIndex $NetworkInterfaceIndex
     #Set DNS settings
     Set-DnsClientServerAddress -InterfaceIndex $NetworkInterfaceIndex -ServerAddresses $DNS
 
@@ -75,7 +83,8 @@ if (!(Test-Path -Path $RunDetectionPath)) {
     #Create first run detection file
     New-Item -ItemType File -Path $RunDetectionPath -Value "1"
 
-    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-command `". '$($MyInvocation.MyCommand.Path)'`""
+    $Action = New-ScheduledTaskAction `
+    -Execute "powershell.exe" -Argument "-command `". '$($MyInvocation.MyCommand.Path)'`""
     $Trigger = New-ScheduledTaskTrigger -AtLogOn
     Register-ScheduledTask -TaskName $ScheduledTaskName -Trigger $Trigger -Action $Action
 
@@ -96,7 +105,8 @@ if ((Get-Content $RunDetectionPath) -eq "1") {
         "ForestMode" = "7"
         "NoRebootOnCompletion" = $true
         "Force" = $true
-        "SafeModeAdministratorPassword" = Import-Clixml $AdDsSafeModePwdPath | ConvertTo-SecureString
+        "SafeModeAdministratorPassword" = Import-Clixml $AdDsSafeModePwdPath | 
+        ConvertTo-SecureString
     }
     Install-ADDSForest @splat
 
@@ -122,7 +132,8 @@ $RepoRoot = (Get-Item $PSScriptRoot).parent.fullname
 Import-Module "$RepoRoot\NN.Fagprove\NN.Fagprove\0.0.1\NN.Fagprove.psm1"
 [xml]$xml = Get-Content -Raw "$PSScriptRoot\AD-structure.xml"
 $DomainRoot = (Get-ADDomain).DistinguishedName
-New-AdStructure -Node $xml.object -Path $DomainRoot -UserTempPassword (Import-Clixml $AdUserTempPwdPath)
+New-AdStructure -Node $xml.object -Path $DomainRoot `
+-UserTempPassword (Import-Clixml $AdUserTempPwdPath)
 
 #Move DC into the right OU
 Move-ADObject -Identity (Get-ADComputer $Hostname).DistinguishedName -TargetPath $OUPath
