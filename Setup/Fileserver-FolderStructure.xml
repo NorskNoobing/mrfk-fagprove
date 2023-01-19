@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<object type="disk" name="F:">
+    <object type="folder" name="GPO">
+        <object type="folder" name="user-policies"/>
+        <object type="folder" name="computer-policies"/>
+        <object type="folder" name="user-computer-policies"/>
+    </object>
+    <object type="folder" name="Home"/>
+    <object type="folder" name="Felles"/>
+</object>
