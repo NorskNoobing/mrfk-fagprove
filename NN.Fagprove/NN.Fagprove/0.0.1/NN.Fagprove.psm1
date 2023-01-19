@@ -18,14 +18,7 @@ function New-AdStructure {
                 }
             }
             user {
-                switch ($item.usertype) {
-                    Admin {
-                        $result = New-FpAdUser -DisplayName $item.name -UserType "Admin" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
-                    }
-                    Standard {
-                        $result = New-FpAdUser -DisplayName $item.name -UserType "Standard" -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
-                    }
-                }
+                $result = New-FpAdUser -DisplayName $item.name -UserType $item.usertype -Path $Path -Password ($UserTempPassword | ConvertTo-SecureString)
             }
             group {
                 $result = New-ADGroup -Path $Path -Name $item.name -PassThru -GroupScope Global
@@ -41,7 +34,35 @@ function New-AdStructure {
         }
     }
 }
-#EndRegion '.\Public\New-AdStructure.ps1' 43
+#EndRegion '.\Public\New-AdStructure.ps1' 36
+#Region '.\Public\New-FolderStructure.ps1' 0
+function New-FolderStructure {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]$Node,
+        [string]$Path
+    )
+
+    process {
+        foreach ($item in $Node) {
+            switch ($item.type) {
+                disk {
+                    $NewPath = $item.name
+                }
+                folder {
+                    $NewPath = $Path + "\" + $item.name
+                }
+            }
+
+            if ($item.object) {
+                New-FolderStructure -Path $NewPath -Node $item.object
+            } else {
+                New-Item -ItemType Directory -Path $NewPath
+            }
+        }
+    }
+}
+#EndRegion '.\Public\New-FolderStructure.ps1' 27
 #Region '.\Public\New-FpAdUser.ps1' 0
 function New-FpAdUser {
     [CmdletBinding()]
@@ -59,14 +80,10 @@ function New-FpAdUser {
         $Surname = $NameSplit[-1]
 
         #Set username
-        switch ($UserType) {
-            Standard {
-                $UsernameStr = $GivenName.Substring(0,3) + $Surname.Substring(0,3)
-            }
-            Admin {
-                $UsernameStr = "adm_" + $GivenName.Substring(0,3) + $Surname.Substring(0,3)
-                $DisplayName = "$DisplayName (Admin)"
-            }
+        $UsernameStr = $GivenName.Substring(0,3) + $Surname.Substring(0,3)
+        if ($UserType -eq "Admin") {
+            $UsernameStr = "adm_" + $UsernameStr
+            $DisplayName = "$DisplayName (Admin)"
         }
 
         $UsernameStr = $UsernameStr.ToLower()
@@ -101,8 +118,9 @@ function New-FpAdUser {
             "Name" = $Username
             "Path" = $Path
             "PassThru" = $true
+            "UserPrincipalName" = "$($NameSplit -join ".")@pengebingen.net"
         }
         New-ADUser @splat
     }
 }
-#EndRegion '.\Public\New-FpAdUser.ps1' 63
+#EndRegion '.\Public\New-FpAdUser.ps1' 60
