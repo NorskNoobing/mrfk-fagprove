@@ -1,7 +1,8 @@
 param (
     $hostname = "SR-PFSENSE-001",
     $DC_IP = "10.0.10.10",
-    $SMB_IP = "10.0.10.5"
+    $SMB_IP = "10.0.10.5",
+    $PrintIP = "10.0.10.15"
 )
 
 #Install required modules
@@ -108,6 +109,15 @@ $splat = @{
 }
 New-PfFirewallAlias @splat
 
+$splat = @{
+    "name" = "Printserver"
+    "descr" = "Ports that the clients use to interact with the printserver"
+    "type" = "port"
+    "address" = @("135","137","138","139","445","49152:65535")
+    "detail" = @("Add printer","Add shared printer")
+}
+New-PfFirewallAlias @splat
+
 #Remove all existing firewall rules
 (Get-PfFirewallRules).data.tracker.ForEach({
     Remove-PfFirewallRule -tracker $_
@@ -163,6 +173,20 @@ $splat = @{
     "dst" = $SMB_IP
     "dstport" = "445"
     "descr" = "SMB"
+}
+New-PfFirewallRule @splat
+
+$splat = @{
+    "top" = "true"
+    "type" = "pass"
+    "interface" = "Client"
+    "ipprotocol" = "inet"
+    "protocol" = "tcp/udp"
+    "src" = "Client"
+    "srcport" = "any"
+    "dst" = $PrintIP
+    "dstport" = "Printserver"
+    "descr" = "Add printers from printservers"
 }
 New-PfFirewallRule @splat
 
